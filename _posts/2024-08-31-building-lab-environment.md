@@ -4,7 +4,7 @@ title: 'Lab Environment: Infrastructure as Code with Vagrant, Ansible, and Virtu
 date: 2024-08-31 07:00:00 -0500 #EST Standard
 description: A step-by-step guide on creating a consistent, reproducible lab environment using Vagrant, VirtualBox, and Ansible, focused on automating infrastructure setup through code. 
 image:
-    path: assets/img/labenv.png
+    path: /assets/img/labenv.png
 categories: [homelab,virtualization,automation]
 tags: [homelab,virtualization,devops]                     # TAG names should always be lowercase
 ---
@@ -97,7 +97,7 @@ end
 
 **Vagrant Architecture Diagram:**
 
-![]()
+*Image yet to be inserted*
 
 *   *   *
 
@@ -112,7 +112,7 @@ vagrant up
 
 **Screenshot:**
 
-![]()
+*Image yet to be inserted*
 
 *   *   *
 
