@@ -52,7 +52,7 @@ Inside this `vagrant` directory, I created a `Vagrantfile` to define the configu
 
 ### Step 2: Writing My Vagrantfile
 
-The `Vagrantfile` is the heart of this setup. It defines the configuration of my Vms, including the number of machines, their resources, and how they are provisioned. \
+The `Vagrantfile` is the heart of this setup. It defines the configuration of my VMs, including the number of machines, their resources, and how they are provisioned. \
 Here's an example `Vagrantfile` that I used to set up three VMs:
 
 ```ruby
@@ -101,10 +101,6 @@ end
 - `private_network`: Assigns a static IP to each VM 
 - `forwarded_port`: Forwards the SSH port from each VM to a specific port on my host machine
 - `provider` block: Configures VirtualBox settings like memory and CPU allocation
-
-#### Vagrant Architecture Diagram
-
-*Image yet to be inserted*
 
 *   *   *
 
@@ -161,7 +157,8 @@ ff02::2 ip6-allrouters
 172.16.1.52 node2
 ```
 By default, Vagrant will share the project directory (the directory with the `Vagrantfile` on host) to `/vagrant` (on guest machine). \
-I have copied the above `hosts` file to the synced directory, therefore the *guests* in Vagrant should have it. Inside the **control** machine, I ran the following command:
+
+Inside the **control** machine, I ran the following command:
 
 ``` bash
 sudo cp /vagrant/hosts /etc/hosts
@@ -212,8 +209,8 @@ Now, I can copy the SSH Keys to the nodes by running:
 ssh-copy-id node1 && ssh-copy-id node2
 ```
 
-I'm prompted for a password, by default it sould be `vagrant` \
-Lastly, I'll test the passwordless SSH login
+I'm prompted for a password, by default it should be `vagrant` \
+Lastly, I'll test the passwordless SSH login:
 
 ```bash
 ssh vagrant@node1
@@ -248,9 +245,11 @@ ansible --version
 
 Now, I can setup the inventory file and playbook file.
 
+*   *   *
+
 ### Step 2: Setting Up Inventory File
 
-On my host machine, inside the `/lab-env/vagrant/ansible/` directory, I'll create a directory for ansible and navigate into it:
+On my host machine, inside the `/lab-env/vagrant/` directory, I'll create a directory for ansible and navigate into it:
 
 ```bash
 mkdir ansible && cd ansible
@@ -271,8 +270,89 @@ nodes:
 This inventory file defines the machines in my lab environment, organized into groups for easy management. The **control** group contains the control machine, while the **nodes** group includes **node1** and **node2**. \
 This setup allows me to target specific machines or groups for automation tasks, streamlining the management of my lab environment 
 
+*   *   *
+
 ### Step 3: Setting Up Playbook 
 
-On my host machine, inside `/lab-env/vagrant/ansible/`, I'll create the following `playbook,yml`:
+On my host machine, inside `/lab-env/vagrant/ansible/`, I'll create the following `playbook.yml`:
 
+```yaml
+---
+- name: Set Up Lab Environment
+  hosts: nodes
+  become: true
+  tasks:
+    - name: Ensure docker is installed
+      apt:
+        name:
+          - docker.io
+        state: latest
 
+    - name: Ensure docker compose is installed
+      apt:
+        name:
+          - docker-compose
+        state: latest
+
+    - name: Ensure docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
+    
+    - name: Reset SSH connection to allow group to be picked up
+      ansible.builtin.meta: reset_connection 
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: vagrant
+        groups: docker
+        state: present
+        append: yes
+      become: true 
+```
+
+*   *   *
+
+### Step 4: Running Playbook
+
+I proceeded to **ssh** into the **control** machine, navigated it to `/vagrant/ansible/` and ran the following:
+
+```bash
+ansible-playbook -i labhosts -K playbook.yml
+```
+
+#### Result
+![vagrant-playbook](/assets/img/labenv/vagrant-playbook.png)
+_Screenshot of playbook result_
+
+The playbook ran successfully!
+
+*   *   *
+
+### Step 5: Verifying Changes
+
+From the **control** machine, I **ssh** into **node1**:
+
+```bash
+ssh node1
+```
+
+Then verified the docker installation as well as the user groups using the following:
+
+```bash
+docker --version && id
+```
+
+#### Result
+![vagrant-playbook-check](/assets/img/labenv/vagrant-playbook-check.png)
+_Screenshot of vagrant user groups and docker version_
+
+*   *   *
+
+## Summary and Next Steps
+![lab-diagram](/assets/img/labenv/lab-diagram.png)
+_Diagram of Lab Environment_
+
+In this guide, I've successfully set up a lab environment using Vagrant and VirtualBox, automating the installation of Docker and Docker Compose with Ansible, as well as managing the nodes' users and roles. The process highlights how automation can simplify complex tasks and ensure consistency across multiple nodes.\
+Looking ahead, I plan to experiment with either Kubernetes or Docker Swarm to explore multi-host container orchestration and management. This will build on the foundations laid in this project, moving towards more advanced, scalable solutions.\
+For those interested in exploring this setup further, all files used in this project are available in my [project repository](https://github.com/jglsung/project-repo). Feel free to clone the repo, experiment with the configurations, and adapt them to your own needs!
